@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slink | Premium Link Shortener</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            padding: 3rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-weight: 600;
+            letter-spacing: -1px;
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+        }
+
+        p {
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        #result-container {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            display: none;
+            border: 1px dashed var(--glass-border);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-link {
+            color: #818cf8;
+            font-weight: 600;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            width: auto;
+            box-shadow: none;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Slink Rishav</h1>
+    <p>Shorten your long URLs instantly.</p>
+    
+    <div class="input-group">
+        <input type="text" id="longUrl" placeholder="Paste your link here..." autocomplete="off">
+    </div>
+    
+    <button onclick="shortenUrl()" id="btn-text">Shorten Link</button>
+    <div id="loader" class="loader"></div>
+
+    <div id="result-container">
+        <p style="margin-bottom: 8px; font-size: 0.8rem;">Your short link is ready:</p>
+        <a href="#" id="shortenedUrl" class="result-link" target="_blank"></a>
+        <button class="copy-btn" onclick="copyToClipboard()">Copy to Clipboard</button>
+    </div>
+</div>
+
+<script>
+    async function shortenUrl() {
+        const longUrl = document.getElementById('longUrl').value;
+        const btnText = document.getElementById('btn-text');
+        const loader = document.getElementById('loader');
+        const resultContainer = document.getElementById('result-container');
+
+        if (!longUrl) {
+            alert("Please enter a valid URL");
+            return;
+        }
+
+        // UI State: Loading
+        btnText.style.display = 'none';
+        loader.style.display = 'block';
+        resultContainer.style.display = 'none';
+
+        try {
+            // Using CleanURI API (Proxying via Cors-anywhere if needed, or direct)
+            const response = await fetch(`https://cleanuri.com/api/v1/shorten`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `url=${encodeURIComponent(longUrl)}`
+            });
+
+            const data = await response.json();
+            
+            if (data.result_url) {
+                document.getElementById('shortenedUrl').innerText = data.result_url;
+                document.getElementById('shortenedUrl').href = data.result_url;
+                resultContainer.style.display = 'block';
+            } else {
+                alert("Error: Could not shorten link. Check the URL format.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("API Error. Please try again later.");
+        } finally {
+            btnText.style.display = 'block';
+            loader.style.display = 'none';
+        }
+    }
+
+    function copyToClipboard() {
+        const urlText = document.getElementById('shortenedUrl').innerText;
+        navigator.clipboard.writeText(urlText);
+        
+        const copyBtn = document.querySelector('.copy-btn');
+        copyBtn.innerText = "Copied!";
+        setTimeout(() => { copyBtn.innerText = "Copy to Clipboard"; }, 2000);
+    }
+</script>
+
+</body>
+</html>
