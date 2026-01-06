@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Slink | Browser Shortener</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Slink | Link Manager</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -12,11 +12,15 @@
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #111827 100%);
             --glass: rgba(255, 255, 255, 0.03);
             --border: rgba(255, 255, 255, 0.1);
+            --danger: #ef4444;
             --success: #10b981;
         }
 
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
             margin: 0;
+            padding: 20px;
             font-family: 'Inter', sans-serif;
             background: var(--bg-gradient);
             color: white;
@@ -24,141 +28,151 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
         }
 
         .container {
             background: var(--glass);
             backdrop-filter: blur(15px);
             border: 1px solid var(--border);
-            padding: 2.5rem;
+            padding: 2rem;
             border-radius: 24px;
-            width: 90%;
-            max-width: 450px;
+            width: 100%;
+            max-width: 500px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             text-align: center;
+            margin-top: 20px;
         }
 
-        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; letter-spacing: -1px; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        p { color: #94a3b8; margin-bottom: 2rem; }
-
+        h1 { font-size: 2.2rem; margin-bottom: 0.5rem; letter-spacing: -1px; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* Mobile adjustments for inputs */
         .input-box {
             width: 100%;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 16px;
+            border-radius: 14px;
             border: 1px solid var(--border);
-            background: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.3);
             color: white;
             font-size: 1rem;
-            margin-bottom: 1rem;
-            box-sizing: border-box;
+            margin-bottom: 12px;
             outline: none;
+            transition: 0.3s;
         }
 
-        button {
+        .input-box:focus { border-color: var(--primary); background: rgba(0,0,0,0.5); }
+
+        .btn-main {
             width: 100%;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 16px;
+            border-radius: 14px;
             border: none;
             background: var(--primary);
             color: white;
             font-weight: 600;
+            font-size: 1rem;
             cursor: pointer;
             transition: 0.3s;
         }
 
-        button:hover { background: var(--primary-hover); transform: translateY(-2px); }
-
-        /* Result Area Styling */
-        #resultArea {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(99, 102, 241, 0.1);
-            border-radius: 16px;
-            border: 1px solid var(--primary);
-            animation: slideIn 0.4s ease-out;
+        /* History Section Styling */
+        .history-section {
+            width: 100%;
+            max-width: 500px;
+            margin-top: 30px;
         }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .result-header { font-size: 0.75rem; color: #818cf8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
-        
-        .link-display {
-            background: rgba(0,0,0,0.3);
-            padding: 10px;
-            border-radius: 8px;
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 15px;
-            font-family: monospace;
-            word-break: break-all;
-            border: 1px solid var(--border);
+            padding: 0 5px;
         }
 
-        .copy-action-btn {
-            background: var(--success);
-            font-size: 0.9rem;
-        }
-
-        .copy-action-btn:hover { background: #059669; }
-
-        /* Toast Notification */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: var(--success);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-weight: 600;
-            box-shadow: 0 10px 15px rgba(0,0,0,0.3);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .toast.show { transform: translateX(-50%) translateY(0); }
-
-        .history {
-            margin-top: 2rem;
-            width: 90%;
-            max-width: 450px;
+        .clear-all-btn {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 5px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
         }
 
         .history-item {
             background: var(--glass);
             border: 1px solid var(--border);
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
         }
-        .history-item a { color: #818cf8; text-decoration: none; font-size: 0.9rem; }
+
+        .history-info { overflow: hidden; display: flex; flex-direction: column; flex-grow: 1; }
+        .history-info span { font-size: 0.75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .history-info a { color: #818cf8; text-decoration: none; font-weight: 600; margin-top: 4px; }
+
+        .delete-single-btn {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        /* Toast styles same as before... */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            background: var(--success);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            z-index: 1000;
+            display: none;
+            animation: popUp 0.3s ease-out;
+        }
+
+        @keyframes popUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Tablet/Desktop Tweaks */
+        @media (min-width: 768px) {
+            .container { padding: 3rem; }
+            h1 { font-size: 3rem; }
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>Slink.</h1>
-        <p>Shorten & Copy Links Instantly</p>
+        <p>Private & Responsive Shortener</p>
         
-        <input type="text" id="urlInput" class="input-box" placeholder="https://example.com">
-        <button onclick="shortenLocal()">Generate Short Link</button>
+        <input type="url" id="urlInput" class="input-box" placeholder="https://example.com" required>
+        <button class="btn-main" onclick="shortenLocal()">Shorten Link</button>
 
-        <div id="resultArea">
-            <div class="result-header">Link Ready</div>
-            <div class="link-display" id="shortLink"></div>
-            <button class="copy-action-btn" onclick="copyResult()">Copy Website Link</button>
+        <div id="resultArea" style="display:none; margin-top:20px; border-top: 1px solid var(--border); padding-top:20px;">
+            <p style="font-size: 0.8rem; color:#818cf8;">Link Created!</p>
+            <div id="shortLink" style="font-family: monospace; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; margin-bottom:15px; word-break:break-all;"></div>
+            <button class="btn-main" style="background:var(--success)" onclick="copyResult()">Copy Website Link</button>
         </div>
     </div>
 
-    <div class="history" id="history"></div>
+    <div class="history-section" id="historySection">
+        <div class="history-header">
+            <h3 style="font-size: 0.9rem; color: #94a3b8; margin:0;">Recent Activity</h3>
+            <button class="clear-all-btn" onclick="clearAllHistory()">Clear All</button>
+        </div>
+        <div id="historyList"></div>
+    </div>
 
-    <div id="toast" class="toast">Link copied to clipboard!</div>
+    <div id="toast" class="toast">Action Successful!</div>
 
     <script>
         function generateHash(str) {
@@ -172,9 +186,12 @@
 
         function shortenLocal() {
             const longUrl = document.getElementById('urlInput').value.trim();
-            if (!longUrl) return alert("Please enter a URL");
+            if (!longUrl || !longUrl.startsWith('http')) {
+                alert("Please enter a valid URL (starting with http://)");
+                return;
+            }
 
-            const hash = generateHash(longUrl);
+            const hash = generateHash(longUrl + Date.now()); // Date.now ensures unique hashes for same URL
             const baseUrl = window.location.href.split('?')[0];
             const finalShortUrl = `${baseUrl}?id=${hash}`;
 
@@ -188,40 +205,62 @@
             updateHistory();
         }
 
-        function copyResult() {
-            const linkText = document.getElementById('shortLink').innerText;
-            navigator.clipboard.writeText(linkText).then(() => {
-                showToast();
-            });
+        function deleteItem(hash) {
+            let links = JSON.parse(localStorage.getItem('myLinks') || '{}');
+            delete links[hash];
+            localStorage.setItem('myLinks', JSON.stringify(links));
+            updateHistory();
         }
 
-        function showToast() {
-            const toast = document.getElementById('toast');
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+        function clearAllHistory() {
+            if (confirm("Are you sure you want to delete all saved links? This cannot be undone.")) {
+                localStorage.removeItem('myLinks');
+                updateHistory();
+                showToast("History Cleared!");
+            }
         }
 
         function updateHistory() {
-            const historyDiv = document.getElementById('history');
+            const list = document.getElementById('historyList');
             const links = JSON.parse(localStorage.getItem('myLinks') || '{}');
             const baseUrl = window.location.href.split('?')[0];
 
-            let html = '<h3 style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px;">Recent Links</h3>';
-            for (const [hash, url] of Object.entries(links)) {
-                html += `
-                    <div class="history-item">
-                        <span style="font-size: 0.8rem; opacity: 0.6; max-width: 200px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${url}</span>
-                        <a href="${baseUrl}?id=${hash}">/${hash}</a>
-                    </div>`;
+            list.innerHTML = "";
+            const keys = Object.keys(links).reverse(); // Show newest first
+
+            if (keys.length === 0) {
+                list.innerHTML = `<p style="text-align:center; color:#4b5563; font-size:0.9rem;">No history found.</p>`;
+                return;
             }
-            historyDiv.innerHTML = html;
+
+            keys.forEach(hash => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <div class="history-info">
+                        <span>${links[hash]}</span>
+                        <a href="${baseUrl}?id=${hash}" target="_blank">/${hash}</a>
+                    </div>
+                    <button class="delete-single-btn" onclick="deleteItem('${hash}')">×</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function copyResult() {
+            const linkText = document.getElementById('shortLink').innerText;
+            navigator.clipboard.writeText(linkText).then(() => showToast("Link Copied!"));
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
         }
 
         window.onload = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
+            const id = new URLSearchParams(window.location.search).get('id');
             if (id) {
                 const links = JSON.parse(localStorage.getItem('myLinks') || '{}');
                 if (links[id]) window.location.href = links[id];
