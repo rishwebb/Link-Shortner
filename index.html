@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Slink | Browser-Based Shortener</title>
+    <title>Slink | Browser Shortener</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -12,6 +12,7 @@
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #111827 100%);
             --glass: rgba(255, 255, 255, 0.03);
             --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
         }
 
         body {
@@ -38,7 +39,7 @@
             text-align: center;
         }
 
-        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; letter-spacing: -1px; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; letter-spacing: -1px; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         p { color: #94a3b8; margin-bottom: 2rem; }
 
         .input-box {
@@ -54,8 +55,6 @@
             outline: none;
         }
 
-        .input-box:focus { border-color: var(--primary); }
-
         button {
             width: 100%;
             padding: 14px;
@@ -70,10 +69,61 @@
 
         button:hover { background: var(--primary-hover); transform: translateY(-2px); }
 
+        /* Result Area Styling */
+        #resultArea {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 16px;
+            border: 1px solid var(--primary);
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header { font-size: 0.75rem; color: #818cf8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+        
+        .link-display {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            word-break: break-all;
+            border: 1px solid var(--border);
+        }
+
+        .copy-action-btn {
+            background: var(--success);
+            font-size: 0.9rem;
+        }
+
+        .copy-action-btn:hover { background: #059669; }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--success);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
         .history {
             margin-top: 2rem;
-            text-align: left;
-            width: 100%;
+            width: 90%;
             max-width: 450px;
         }
 
@@ -87,37 +137,35 @@
             justify-content: space-between;
             align-items: center;
         }
-
         .history-item a { color: #818cf8; text-decoration: none; font-size: 0.9rem; }
-        .history-item span { color: #4b5563; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>Slink.</h1>
-        <p>No APIs. Just pure logic.</p>
+        <p>Shorten & Copy Links Instantly</p>
         
-        <input type="text" id="urlInput" class="input-box" placeholder="Paste your long URL here...">
+        <input type="text" id="urlInput" class="input-box" placeholder="https://example.com">
         <button onclick="shortenLocal()">Generate Short Link</button>
 
-        <div id="resultArea" style="display:none; margin-top: 20px; padding: 15px; background: rgba(99,102,241,0.1); border-radius: 12px; border: 1px dashed var(--primary);">
-            <p style="margin:0 0 5px 0; font-size: 0.8rem;">Your Link:</p>
-            <a href="#" id="shortLink" style="color: white; font-weight: bold; font-size: 1.1rem;" target="_blank"></a>
+        <div id="resultArea">
+            <div class="result-header">Link Ready</div>
+            <div class="link-display" id="shortLink"></div>
+            <button class="copy-action-btn" onclick="copyResult()">Copy Website Link</button>
         </div>
     </div>
 
-    <div class="history" id="history">
-        <h3 style="font-size: 1rem; color: #64748b; margin-bottom: 15px;">Recent Links</h3>
-        </div>
+    <div class="history" id="history"></div>
+
+    <div id="toast" class="toast">Link copied to clipboard!</div>
 
     <script>
-        // 1. Generate a unique hash for the URL
         function generateHash(str) {
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
                 hash = (hash << 5) - hash + str.charCodeAt(i);
-                hash |= 0; // Convert to 32bit integer
+                hash |= 0;
             }
             return Math.abs(hash).toString(36).substring(0, 6);
         }
@@ -127,20 +175,32 @@
             if (!longUrl) return alert("Please enter a URL");
 
             const hash = generateHash(longUrl);
-            const baseUrl = window.location.href.split('?')[0]; // Current page URL
+            const baseUrl = window.location.href.split('?')[0];
             const finalShortUrl = `${baseUrl}?id=${hash}`;
 
-            // Save to LocalStorage
             let links = JSON.parse(localStorage.getItem('myLinks') || '{}');
             links[hash] = longUrl;
             localStorage.setItem('myLinks', JSON.stringify(links));
 
-            // Show Result
             document.getElementById('resultArea').style.display = 'block';
             document.getElementById('shortLink').innerText = finalShortUrl;
-            document.getElementById('shortLink').href = finalShortUrl;
 
             updateHistory();
+        }
+
+        function copyResult() {
+            const linkText = document.getElementById('shortLink').innerText;
+            navigator.clipboard.writeText(linkText).then(() => {
+                showToast();
+            });
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
         }
 
         function updateHistory() {
@@ -148,29 +208,23 @@
             const links = JSON.parse(localStorage.getItem('myLinks') || '{}');
             const baseUrl = window.location.href.split('?')[0];
 
-            let html = '<h3 style="font-size: 1rem; color: #64748b; margin-bottom: 15px;">Recent Links</h3>';
+            let html = '<h3 style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px;">Recent Links</h3>';
             for (const [hash, url] of Object.entries(links)) {
                 html += `
                     <div class="history-item">
-                        <span>${url}</span>
-                        <a href="${baseUrl}?id=${hash}" target="_blank">/${hash}</a>
+                        <span style="font-size: 0.8rem; opacity: 0.6; max-width: 200px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${url}</span>
+                        <a href="${baseUrl}?id=${hash}">/${hash}</a>
                     </div>`;
             }
             historyDiv.innerHTML = html;
         }
 
-        // 2. Redirect Logic: Check if there is an ID in the URL on load
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
             const id = urlParams.get('id');
-
             if (id) {
                 const links = JSON.parse(localStorage.getItem('myLinks') || '{}');
-                if (links[id]) {
-                    window.location.href = links[id]; // Redirect to the long URL
-                } else {
-                    alert("Link not found in local storage!");
-                }
+                if (links[id]) window.location.href = links[id];
             }
             updateHistory();
         };
