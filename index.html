@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Slink | Link Manager</title>
+    <title>Slink | Global URL Shortener</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --primary: #6366f1;
@@ -44,8 +48,8 @@
         }
 
         h1 { font-size: 2.2rem; margin-bottom: 0.5rem; letter-spacing: -1px; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        /* Mobile adjustments for inputs */
+        p { color: #94a3b8; margin-bottom: 2rem; font-size: 0.9rem; }
+
         .input-box {
             width: 100%;
             padding: 16px;
@@ -74,11 +78,34 @@
             transition: 0.3s;
         }
 
-        /* History Section Styling */
+        .btn-main:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+        #resultArea {
+            display: none;
+            margin-top: 25px;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .link-display {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            word-break: break-all;
+            border: 1px solid var(--border);
+            color: #818cf8;
+        }
+
+        /* History Section */
         .history-section {
             width: 100%;
             max-width: 500px;
-            margin-top: 30px;
+            margin-top: 35px;
         }
 
         .history-header {
@@ -93,11 +120,14 @@
             background: transparent;
             color: var(--danger);
             border: 1px solid var(--danger);
-            padding: 5px 12px;
-            border-radius: 8px;
+            padding: 6px 14px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 0.8rem;
+            transition: 0.3s;
         }
+
+        .clear-all-btn:hover { background: var(--danger); color: white; }
 
         .history-item {
             background: var(--glass);
@@ -108,24 +138,26 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .history-info { overflow: hidden; display: flex; flex-direction: column; flex-grow: 1; }
         .history-info span { font-size: 0.75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .history-info a { color: #818cf8; text-decoration: none; font-weight: 600; margin-top: 4px; }
+        .history-info a { color: #818cf8; text-decoration: none; font-weight: 600; margin-top: 4px; font-size: 0.95rem; }
 
-        .delete-single-btn {
+        .delete-btn {
             background: rgba(239, 68, 68, 0.1);
             color: var(--danger);
             border: none;
-            padding: 8px;
-            border-radius: 8px;
+            padding: 8px 12px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            transition: 0.2s;
         }
 
-        /* Toast styles same as before... */
+        .delete-btn:hover { background: var(--danger); color: white; }
+
         .toast {
             position: fixed;
             bottom: 30px;
@@ -134,39 +166,34 @@
             padding: 12px 24px;
             border-radius: 50px;
             font-weight: 600;
-            z-index: 1000;
             display: none;
-            animation: popUp 0.3s ease-out;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            animation: slideUp 0.3s ease-out;
         }
 
-        @keyframes popUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        /* Tablet/Desktop Tweaks */
-        @media (min-width: 768px) {
-            .container { padding: 3rem; }
-            h1 { font-size: 3rem; }
-        }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>Slink.</h1>
-        <p>Private & Responsive Shortener</p>
+        <p>Private & Global Responsive Shortener</p>
         
         <input type="url" id="urlInput" class="input-box" placeholder="https://example.com" required>
-        <button class="btn-main" onclick="shortenLocal()">Shorten Link</button>
+        <button class="btn-main" onclick="shortenLink()">Shorten Link</button>
 
-        <div id="resultArea" style="display:none; margin-top:20px; border-top: 1px solid var(--border); padding-top:20px;">
-            <p style="font-size: 0.8rem; color:#818cf8;">Link Created!</p>
-            <div id="shortLink" style="font-family: monospace; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; margin-bottom:15px; word-break:break-all;"></div>
-            <button class="btn-main" style="background:var(--success)" onclick="copyResult()">Copy Website Link</button>
+        <div id="resultArea">
+            <p style="font-size: 0.8rem; color: #818cf8; margin-bottom: 10px;">Link Created Successfully!</p>
+            <div id="shortLink" class="link-display"></div>
+            <button class="btn-main" style="background: var(--success);" onclick="copyLink()">Copy Website Link</button>
         </div>
     </div>
 
-    <div class="history-section" id="historySection">
+    <div class="history-section">
         <div class="history-header">
-            <h3 style="font-size: 0.9rem; color: #94a3b8; margin:0;">Recent Activity</h3>
+            <h3 style="font-size: 0.9rem; color: #94a3b8; margin: 0; letter-spacing: 1px;">RECENT ACTIVITY</h3>
             <button class="clear-all-btn" onclick="clearAllHistory()">Clear All</button>
         </div>
         <div id="historyList"></div>
@@ -175,61 +202,87 @@
     <div id="toast" class="toast">Action Successful!</div>
 
     <script>
-        function generateHash(str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = (hash << 5) - hash + str.charCodeAt(i);
-                hash |= 0;
-            }
-            return Math.abs(hash).toString(36).substring(0, 6);
-        }
+        // 1. Firebase Configuration using your Slink-Global credentials
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmB8lyJUUc7sZLGiyYhr3S9S_aUyXf_qU",
+            authDomain: "slink-global.firebaseapp.com",
+            projectId: "slink-global",
+            storageBucket: "slink-global.firebasestorage.app",
+            messagingSenderId: "336731962024",
+            appId: "1:336731962024:web:7be547786bffa06a54609d",
+            measurementId: "G-FJSQN2W1NG"
+        };
 
-        function shortenLocal() {
-            const longUrl = document.getElementById('urlInput').value.trim();
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 2. Main Logic: Shorten Link
+        async function shortenLink() {
+            const urlInput = document.getElementById('urlInput');
+            const longUrl = urlInput.value.trim();
+            
             if (!longUrl || !longUrl.startsWith('http')) {
-                alert("Please enter a valid URL (starting with http://)");
+                alert("Please enter a full URL (starting with http:// or https://)");
                 return;
             }
 
-            const hash = generateHash(longUrl + Date.now()); // Date.now ensures unique hashes for same URL
-            const baseUrl = window.location.href.split('?')[0];
-            const finalShortUrl = `${baseUrl}?id=${hash}`;
+            // Generate a unique 6-character ID
+            const hash = Math.random().toString(36).substring(2, 8);
+            const baseUrl = window.location.origin + window.location.pathname;
+            const finalUrl = `${baseUrl}?id=${hash}`;
 
-            let links = JSON.parse(localStorage.getItem('myLinks') || '{}');
-            links[hash] = longUrl;
-            localStorage.setItem('myLinks', JSON.stringify(links));
+            try {
+                // Save to Cloud Firestore Database
+                await db.collection("links").doc(hash).set({
+                    original: longUrl,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
-            document.getElementById('resultArea').style.display = 'block';
-            document.getElementById('shortLink').innerText = finalShortUrl;
-
-            updateHistory();
-        }
-
-        function deleteItem(hash) {
-            let links = JSON.parse(localStorage.getItem('myLinks') || '{}');
-            delete links[hash];
-            localStorage.setItem('myLinks', JSON.stringify(links));
-            updateHistory();
-        }
-
-        function clearAllHistory() {
-            if (confirm("Are you sure you want to delete all saved links? This cannot be undone.")) {
-                localStorage.removeItem('myLinks');
-                updateHistory();
-                showToast("History Cleared!");
+                // Display result
+                document.getElementById('resultArea').style.display = 'block';
+                document.getElementById('shortLink').innerText = finalUrl;
+                
+                // Save to local device history for UI
+                saveLocalHistory(hash, longUrl);
+                urlInput.value = "";
+            } catch (error) {
+                console.error("Cloud Error:", error);
+                alert("Database Error: Ensure your Firestore Rules are set to 'True'.");
             }
         }
 
-        function updateHistory() {
+        // 3. Global Redirection Logic
+        window.onload = async () => {
+            const id = new URLSearchParams(window.location.search).get('id');
+            if (id) {
+                const doc = await db.collection("links").doc(id).get();
+                if (doc.exists) {
+                    window.location.href = doc.data().original;
+                } else {
+                    alert("Link not found in the global cloud!");
+                }
+            }
+            renderHistory();
+        };
+
+        // --- UI and History Helpers ---
+        function saveLocalHistory(hash, url) {
+            let history = JSON.parse(localStorage.getItem('slink_history') || '{}');
+            history[hash] = url;
+            localStorage.setItem('slink_history', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
             const list = document.getElementById('historyList');
-            const links = JSON.parse(localStorage.getItem('myLinks') || '{}');
-            const baseUrl = window.location.href.split('?')[0];
-
+            const history = JSON.parse(localStorage.getItem('slink_history') || '{}');
+            const baseUrl = window.location.origin + window.location.pathname;
             list.innerHTML = "";
-            const keys = Object.keys(links).reverse(); // Show newest first
-
+            
+            const keys = Object.keys(history).reverse();
             if (keys.length === 0) {
-                list.innerHTML = `<p style="text-align:center; color:#4b5563; font-size:0.9rem;">No history found.</p>`;
+                list.innerHTML = `<p style="text-align:center; color:#4b5563; font-size:0.85rem; margin-top:20px;">No recent activity found.</p>`;
                 return;
             }
 
@@ -238,35 +291,41 @@
                 item.className = 'history-item';
                 item.innerHTML = `
                     <div class="history-info">
-                        <span>${links[hash]}</span>
+                        <span>${history[hash]}</span>
                         <a href="${baseUrl}?id=${hash}" target="_blank">/${hash}</a>
                     </div>
-                    <button class="delete-single-btn" onclick="deleteItem('${hash}')">×</button>
+                    <button class="delete-btn" onclick="deleteSingle('${hash}')">×</button>
                 `;
                 list.appendChild(item);
             });
         }
 
-        function copyResult() {
-            const linkText = document.getElementById('shortLink').innerText;
-            navigator.clipboard.writeText(linkText).then(() => showToast("Link Copied!"));
+        function copyLink() {
+            const text = document.getElementById('shortLink').innerText;
+            navigator.clipboard.writeText(text).then(() => showToast("Link Copied!"));
+        }
+
+        function deleteSingle(hash) {
+            let history = JSON.parse(localStorage.getItem('slink_history') || '{}');
+            delete history[hash];
+            localStorage.setItem('slink_history', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function clearAllHistory() {
+            if (confirm("Clear local activity? (Your global links will still work)")) {
+                localStorage.removeItem('slink_history');
+                renderHistory();
+                showToast("History Cleared!");
+            }
         }
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
             toast.innerText = msg;
             toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            setTimeout(() => { toast.style.display = 'none'; }, 2500);
         }
-
-        window.onload = () => {
-            const id = new URLSearchParams(window.location.search).get('id');
-            if (id) {
-                const links = JSON.parse(localStorage.getItem('myLinks') || '{}');
-                if (links[id]) window.location.href = links[id];
-            }
-            updateHistory();
-        };
     </script>
 </body>
 </html>
