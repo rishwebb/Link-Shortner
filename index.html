@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Slink | Global URL Shortener</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Slink | Premium URL Shortener</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -13,11 +14,12 @@
         :root {
             --primary: #6366f1;
             --primary-hover: #4f46e5;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+            --bg: #030712;
             --glass: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.1);
-            --danger: #ef4444;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-muted: #94a3b8;
             --success: #10b981;
+            --danger: #f43f5e;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -25,203 +27,200 @@
         body {
             margin: 0;
             padding: 20px;
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-gradient);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.1) 0px, transparent 50%);
             color: white;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            overflow-x: hidden;
         }
 
-        /* Stealth Redirect Loader */
-        #redirect-loader {
+        /* 🟢 ZERO-FLASH REDIRECT OVERLAY */
+        #redirect-overlay {
             position: fixed;
             inset: 0;
-            background: #0f172a;
-            z-index: 9999;
-            display: none;
+            background: var(--bg);
+            z-index: 10000;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            /* Initially hidden, shown only if ID exists via script */
+            display: none; 
         }
 
-        .container {
+        /* 🔴 MAIN APP CONTAINER (Hidden by default to prevent frame-flashing) */
+        #main-app {
+            display: none;
+            width: 100%;
+            max-width: 480px;
+            margin-top: 40px;
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card {
             background: var(--glass);
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(20px);
             border: 1px solid var(--border);
-            padding: 2rem;
-            border-radius: 24px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            padding: 2.5rem;
+            border-radius: 28px;
             text-align: center;
-            margin-top: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        h1 { font-size: 2.2rem; margin-bottom: 0.5rem; letter-spacing: -1px; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        p { color: #94a3b8; margin-bottom: 2rem; font-size: 0.9rem; }
+        h1 { font-size: 2.8rem; font-weight: 700; margin: 0; letter-spacing: -2px; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .tagline { color: var(--text-muted); font-size: 0.95rem; margin-top: 8px; margin-bottom: 30px; }
 
-        .input-box {
+        .input-group { position: relative; margin-bottom: 12px; }
+        
+        input {
             width: 100%;
-            padding: 16px;
-            border-radius: 14px;
+            padding: 18px 20px;
+            border-radius: 16px;
             border: 1px solid var(--border);
-            background: rgba(0,0,0,0.3);
+            background: rgba(0, 0, 0, 0.3);
             color: white;
             font-size: 1rem;
-            margin-bottom: 12px;
             outline: none;
-            transition: 0.3s;
+            transition: all 0.3s ease;
         }
 
-        .input-box:focus { border-color: var(--primary); background: rgba(0,0,0,0.5); }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); background: rgba(0, 0, 0, 0.5); }
 
-        .btn-main {
+        .btn {
             width: 100%;
-            padding: 16px;
-            border-radius: 14px;
+            padding: 18px;
+            border-radius: 16px;
             border: none;
             background: var(--primary);
             color: white;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 1rem;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .btn-main:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        .btn:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4); }
+        .btn:active { transform: translateY(0); }
 
         #resultArea {
-            display: none;
-            margin-top: 25px;
+            margin-top: 30px;
+            padding-top: 25px;
             border-top: 1px solid var(--border);
-            padding-top: 20px;
+            display: none;
         }
 
-        .link-display {
-            background: rgba(0,0,0,0.3);
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            font-family: monospace;
+        .result-link {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 14px;
+            border-radius: 12px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            color: #a5b4fc;
             word-break: break-all;
-            border: 1px solid var(--border);
-            color: #818cf8;
-        }
-
-        .history-section {
-            width: 100%;
-            max-width: 500px;
-            margin-top: 35px;
-        }
-
-        .history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             margin-bottom: 15px;
-            padding: 0 5px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
         }
 
-        .clear-all-btn {
-            background: transparent;
-            color: var(--danger);
-            border: 1px solid var(--danger);
-            padding: 6px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: 0.3s;
-        }
-
+        /* History Styling */
+        .history-section { width: 100%; max-width: 480px; margin-top: 40px; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 5px; }
+        .history-title { font-size: 0.8rem; font-weight: 700; color: #475569; letter-spacing: 1.5px; text-transform: uppercase; }
+        
         .history-item {
             background: var(--glass);
             border: 1px solid var(--border);
-            padding: 15px;
-            border-radius: 16px;
+            padding: 16px;
+            border-radius: 20px;
             margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 12px;
+            transition: 0.3s;
         }
 
-        .history-info { overflow: hidden; display: flex; flex-direction: column; flex-grow: 1; }
-        .history-info span { font-size: 0.75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .history-info a { color: #818cf8; text-decoration: none; font-weight: 600; margin-top: 4px; font-size: 0.95rem; }
+        .history-item:hover { border-color: rgba(99, 102, 241, 0.3); background: rgba(255,255,255,0.05); }
+        .history-info a { color: #818cf8; text-decoration: none; font-weight: 600; font-size: 1.05rem; }
+        .history-info span { font-size: 0.75rem; color: #64748b; display: block; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
 
-        .delete-btn {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: none;
-            padding: 8px 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1.2rem;
+        .del-btn { background: none; border: none; color: #475569; cursor: pointer; font-size: 1.2rem; padding: 5px; transition: 0.2s; }
+        .del-btn:hover { color: var(--danger); }
+
+        /* Spinner */
+        .spinner {
+            width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%; border-top-color: var(--primary);
+            animation: spin 0.8s linear infinite;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .toast {
-            position: fixed;
-            bottom: 30px;
-            background: var(--success);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-weight: 600;
-            display: none;
-            z-index: 1000;
-            animation: slideUp 0.3s ease-out;
+            position: fixed; bottom: 30px; background: var(--success); color: white;
+            padding: 14px 28px; border-radius: 50px; font-weight: 600; font-size: 0.9rem;
+            display: none; box-shadow: 0 15px 30px rgba(0,0,0,0.4); z-index: 11000;
+            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
         @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        /* Loader Animation */
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #818cf8;
-            animation: spin 1s linear infinite;
-            margin-top: 20px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="redirect-loader">
-        <h1 style="margin: 0;">Redirecting...</h1>
-        <div class="spinner"></div>
-    </div>
-
-    <div class="container">
+    <div id="redirect-overlay">
         <h1>Slink.</h1>
-        <p>Private & Global Responsive Shortener</p>
-        
-        <input type="url" id="urlInput" class="input-box" placeholder="https://example.com" required>
-        <button class="btn-main" onclick="shortenLink()">Shorten Link</button>
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; font-size: 0.9rem; color: #64748b;">Securing your connection...</p>
+    </div>
 
-        <div id="resultArea">
-            <p style="font-size: 0.8rem; color: #818cf8; margin-bottom: 10px;">Link Created Successfully!</p>
-            <div id="shortLink" class="link-display"></div>
-            <button class="btn-main" style="background: var(--success);" onclick="copyLink()">Copy Website Link</button>
+    <div id="main-app">
+        <div class="card">
+            <h1>Slink.</h1>
+            <p class="tagline">Premium Global URL Infrastructure</p>
+            
+            <div class="input-group">
+                <input type="url" id="urlInput" placeholder="https://paste-long-url-here.com" required>
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="customAlias" placeholder="Custom name (optional)" maxlength="20">
+            </div>
+
+            <button class="btn" onclick="shortenLink()">
+                <span>Shorten Link</span>
+            </button>
+
+            <div id="resultArea">
+                <p style="font-size: 0.8rem; color: var(--success); font-weight: 600; margin-bottom: 12px;">Link Ready for Use</p>
+                <div id="shortLink" class="result-link"></div>
+                <button class="btn" style="background: var(--success);" onclick="copyLink()">
+                    Copy to Clipboard
+                </button>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <div class="history-header">
+                <span class="history-title">Recent Infrastructure Activity</span>
+                <button onclick="clearAll()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.7rem; font-weight:700; letter-spacing:1px;">PURGE ALL</button>
+            </div>
+            <div id="historyList"></div>
         </div>
     </div>
 
-    <div class="history-section">
-        <div class="history-header">
-            <h3 style="font-size: 0.9rem; color: #94a3b8; margin: 0; letter-spacing: 1px;">RECENT ACTIVITY</h3>
-            <button class="clear-all-btn" onclick="clearAllHistory()">Clear All</button>
-        </div>
-        <div id="historyList"></div>
-    </div>
-
-    <div id="toast" class="toast">Action Successful!</div>
+    <div id="toast" class="toast">Link Copied!</div>
 
     <script>
-        // Firebase Config using your "Slink-Global" credentials
+        // Firebase Credentials
         const firebaseConfig = {
             apiKey: "AIzaSyBmB8lyJUUc7sZLGiyYhr3S9S_aUyXf_qU",
             authDomain: "slink-global.firebaseapp.com",
@@ -235,51 +234,63 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // 1. GLOBAL REDIRECT LOGIC (Optimized for speed)
-        window.onload = async () => {
-            const id = new URLSearchParams(window.location.search).get('id');
-            if (id) {
-                // Instantly hide the UI and show the redirect screen
-                document.getElementById('redirect-loader').style.display = 'flex';
-                document.querySelector('.container').style.display = 'none';
-                document.querySelector('.history-section').style.display = 'none';
+        // 🟢 FRAME-PERFECT REDIRECT LOGIC
+        // This runs immediately when the script loads
+        (async function checkRedirect() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
 
+            if (id) {
+                // Show redirect UI immediately
+                document.getElementById('redirect-overlay').style.display = 'flex';
+                
                 try {
                     const doc = await db.collection("links").doc(id).get();
                     if (doc.exists) {
-                        window.location.replace(doc.data().original); // replace is faster for redirects
+                        // Using replace instead of href for cleaner history stack
+                        window.location.replace(doc.data().original);
                         return;
                     } else {
-                        alert("Link not found in the cloud database!");
+                        alert("Infrastructure Alert: This link was not found.");
                     }
                 } catch (e) {
-                    console.error("Redirect error:", e);
+                    console.error("Redirection Error:", e);
                 }
-                
-                // If link fails, show the home page again
-                document.getElementById('redirect-loader').style.display = 'none';
-                document.querySelector('.container').style.display = 'block';
-                document.querySelector('.history-section').style.display = 'block';
+                // If it fails, revert to main app
+                document.getElementById('redirect-overlay').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+            } else {
+                // No ID? Just show the main app
+                document.getElementById('main-app').style.display = 'block';
             }
             renderHistory();
-        };
+        })();
 
-        // 2. SHORTEN LINK LOGIC
+        // 🔵 SHORTEN LOGIC
         async function shortenLink() {
             const urlInput = document.getElementById('urlInput');
+            const aliasInput = document.getElementById('customAlias');
             const longUrl = urlInput.value.trim();
+            const alias = aliasInput.value.trim();
             
             if (!longUrl || !longUrl.startsWith('http')) {
-                alert("Please enter a full URL (starting with http:// or https://)");
+                alert("Provide a valid protocol (http/https)");
                 return;
             }
 
-            const hash = Math.random().toString(36).substring(2, 8);
+            // Generate hash or use custom alias
+            const hash = alias || Math.random().toString(36).substring(2, 8);
             const baseUrl = window.location.origin + window.location.pathname;
             const finalUrl = `${baseUrl}?id=${hash}`;
 
             try {
-                // Save to Cloud Firestore
+                // Check if alias already exists if user provided one
+                if (alias) {
+                    const checkDoc = await db.collection("links").doc(alias).get();
+                    if (checkDoc.exists) return alert("This custom name is already taken!");
+                }
+
+                // Global Cloud Save
                 await db.collection("links").doc(hash).set({
                     original: longUrl,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -288,31 +299,31 @@
                 document.getElementById('resultArea').style.display = 'block';
                 document.getElementById('shortLink').innerText = finalUrl;
                 
-                saveLocalHistory(hash, longUrl);
+                saveHistory(hash, longUrl);
                 urlInput.value = "";
-            } catch (error) {
-                console.error("Database error:", error);
-                alert("Make sure your Firestore Rules are set to public!");
+                aliasInput.value = "";
+            } catch (e) {
+                alert("Cloud Sync Failed. Ensure Firestore Rules are Public.");
             }
         }
 
-        // --- UI AND HISTORY HELPERS ---
-        function saveLocalHistory(hash, url) {
-            let history = JSON.parse(localStorage.getItem('slink_history') || '{}');
+        // --- INFRASTRUCTURE HELPERS ---
+        function saveHistory(hash, url) {
+            let history = JSON.parse(localStorage.getItem('slink_pro_hist') || '{}');
             history[hash] = url;
-            localStorage.setItem('slink_history', JSON.stringify(history));
+            localStorage.setItem('slink_pro_hist', JSON.stringify(history));
             renderHistory();
         }
 
         function renderHistory() {
             const list = document.getElementById('historyList');
-            const history = JSON.parse(localStorage.getItem('slink_history') || '{}');
+            const history = JSON.parse(localStorage.getItem('slink_pro_hist') || '{}');
             const baseUrl = window.location.origin + window.location.pathname;
             list.innerHTML = "";
             
             const keys = Object.keys(history).reverse();
             if (keys.length === 0) {
-                list.innerHTML = `<p style="text-align:center; color:#4b5563; font-size:0.85rem;">No recent activity.</p>`;
+                list.innerHTML = `<p style="text-align:center; color:#334155; font-size:0.8rem; padding:20px;">No Recent Infrastructure Records</p>`;
                 return;
             }
 
@@ -324,37 +335,33 @@
                         <span>${history[hash]}</span>
                         <a href="${baseUrl}?id=${hash}" target="_blank">/${hash}</a>
                     </div>
-                    <button class="delete-btn" onclick="deleteSingle('${hash}')">×</button>
+                    <button class="del-btn" onclick="deleteItem('${hash}')">×</button>
                 `;
                 list.appendChild(item);
             });
         }
 
         function copyLink() {
-            const text = document.getElementById('shortLink').innerText;
-            navigator.clipboard.writeText(text).then(() => showToast("Link Copied!"));
+            const link = document.getElementById('shortLink').innerText;
+            navigator.clipboard.writeText(link).then(() => {
+                const toast = document.getElementById('toast');
+                toast.style.display = 'block';
+                setTimeout(() => toast.style.display = 'none', 2500);
+            });
         }
 
-        function deleteSingle(hash) {
-            let history = JSON.parse(localStorage.getItem('slink_history') || '{}');
+        function deleteItem(hash) {
+            let history = JSON.parse(localStorage.getItem('slink_pro_hist') || '{}');
             delete history[hash];
-            localStorage.setItem('slink_history', JSON.stringify(history));
+            localStorage.setItem('slink_pro_hist', JSON.stringify(history));
             renderHistory();
         }
 
-        function clearAllHistory() {
-            if (confirm("Clear local activity?")) {
-                localStorage.removeItem('slink_history');
+        function clearAll() {
+            if (confirm("Execute data purge? (This clears your local history only)")) {
+                localStorage.removeItem('slink_pro_hist');
                 renderHistory();
-                showToast("History Cleared!");
             }
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 2500);
         }
     </script>
 </body>
